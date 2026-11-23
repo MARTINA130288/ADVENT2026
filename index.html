@@ -13,7 +13,7 @@
 /* Layout: obalni filter (jug→sjever) iznad, mjesečna mreža lijevo + dnevni program desno; na mobitelu jedno ispod drugog */
 :root {
   --bg: #F2F5F6; --surface: #FFFFFF; --sunk: #E8EEF1; --ink: #13212B; --muted: #5A6A75; --line: #D6DEE3;
-  --accent: #0F5C78; --accent-ink: #FFFFFF; --today: #0F5C78;
+  --accent: #0F5C78; --accent-ink: #FFFFFF; --today: #0F5C78; --hill-soft: #EFE6D6;
   --cA: #B3323A; --cD: #B57A0C; --cR: #C85E1A; --cO: #6A48B0; --cI: #1F6AAE; --cT: #2D8454;
   --ok: #2D7A4B; --okbg: #E1F1E6; --naj: #8A6410; --najbg: #FBF0D2; --sta: #24609A; --stabg: #DDEAF7;
   --pro: #A5481C; --probg: #FBE6DA; --otk: #FFFFFF; --otkbg: #A3313A;
@@ -23,7 +23,7 @@
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0C151B; --surface: #14212A; --sunk: #1A2a34; --ink: #E5ECF0; --muted: #93A3AE; --line: #263842;
-  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3;
+  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B;
   --cA: #F07A82; --cD: #EDC05A; --cR: #F39A60; --cO: #B49CF0; --cI: #7BB7EC; --cT: #6ACF97;
   --ok: #7FD3A0; --okbg: #183A28; --naj: #EBC768; --najbg: #3A3016; --sta: #8DBDEB; --stabg: #1A3148;
   --pro: #F2A57E; --probg: #3E2418; --otk: #FFFFFF; --otkbg: #9A2F37;
@@ -31,7 +31,7 @@
 } }
 :root[data-theme="dark"] {
   --bg: #0C151B; --surface: #14212A; --sunk: #1A2a34; --ink: #E5ECF0; --muted: #93A3AE; --line: #263842;
-  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3;
+  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B;
   --cA: #F07A82; --cD: #EDC05A; --cR: #F39A60; --cO: #B49CF0; --cI: #7BB7EC; --cT: #6ACF97;
   --ok: #7FD3A0; --okbg: #183A28; --naj: #EBC768; --najbg: #3A3016; --sta: #8DBDEB; --stabg: #1A3148;
   --pro: #F2A57E; --probg: #3E2418; --otk: #FFFFFF; --otkbg: #9A2F37;
@@ -48,13 +48,32 @@ h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* obala */
-.coast { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.coast-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
-.town { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px;
-  padding: 5px 12px; font: 500 13px var(--body); cursor: pointer; }
-.town[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.coast .arrow { color: var(--muted); font-size: 12px; }
+/* gradovi: kartice s brojem događanja i trakom kategorija (Martina 23.11.: prijedlog C) */
+.towns { display: grid; gap: 10px; }
+.town-all { justify-self: start; display: inline-flex; gap: 8px; align-items: baseline; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); border-radius: 10px; padding: 7px 14px; font: 600 14px var(--body);
+  cursor: pointer; min-height: 40px; }
+.town-all span { color: var(--muted); font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; }
+.town-all[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.town-all[aria-pressed="true"] span { color: inherit; opacity: .8; }
+.town-group { display: grid; gap: 6px; }
+.town-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.tgrid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.tile { text-align: left; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); border-radius: 10px;
+  padding: 9px 10px 8px; cursor: pointer; display: grid; gap: 2px; min-width: 0; font: inherit; }
+.tile .nm { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .n { font: 700 1.5rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .bar { display: flex; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 5px; background: var(--line); }
+.tile .bar i { display: block; background: var(--c); }
+.tile.in { background: var(--hill-soft); }
+.tile.zero .n, .tile.zero .nm { color: var(--muted); }
+.tile:hover .nm { text-decoration: underline; }
+.tile[aria-pressed="true"] { background: var(--surface); border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+@media (max-width: 1000px) { .tgrid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 520px) {
+  .tgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .tile { padding: 7px 6px 6px; } .tile .nm { font-size: 11px; letter-spacing: -0.01em; } .tile .n { font-size: 1.2rem; }
+}
 
 .filters { display: grid; gap: 12px; }
 .cats { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -141,7 +160,7 @@ a { color: var(--accent); }
 
 .section { margin-top: 4px; }
 .foot { color: var(--muted); font-size: 12px; }
-@media (prefers-reduced-motion: no-preference) { .day, .town, .cat-btn { transition: background-color .15s, border-color .15s, opacity .15s; } }
+@media (prefers-reduced-motion: no-preference) { .day, .tile, .town-all, .cat-btn { transition: background-color .15s, border-color .15s, opacity .15s; } }
 
 /* mobitel i laptop */
 .search { font-size: 16px; }
@@ -162,11 +181,11 @@ details.fold[open] > summary::before { content: "▾"; }
 }
 @media (max-width: 640px) {
   .wrap { padding-block: 16px 40px; gap: 14px; }
-  .coast, .cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  .cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
     -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
-  .coast::-webkit-scrollbar, .cats::-webkit-scrollbar { display: none; }
-  .town, .cat-btn, .coast-label { flex: 0 0 auto; white-space: nowrap; }
-  .town, .cat-btn, .seg button { min-height: 40px; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat-btn { flex: 0 0 auto; white-space: nowrap; }
+  .cat-btn, .seg button { min-height: 40px; }
   .panel { padding: 12px; }
   .ev { grid-template-columns: 52px minmax(0, 1fr); gap: 10px; }
   .cal-head h2 { font-size: 1.15rem; }
@@ -180,9 +199,7 @@ details.fold[open] > summary::before { content: "▾"; }
   </header>
 
   <div class="filters">
-    <div class="coast" id="coast" aria-label="Grad">
-      <span class="coast-label">Obala, jug → sjever</span>
-    </div>
+    <div class="towns" id="towns" role="group" aria-label="Grad"></div>
     <div class="cats" id="cats" aria-label="Kategorije"></div>
     <div class="row">
       <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu…" aria-label="Pretraga">
@@ -229,7 +246,8 @@ const CATS = {
   T: { name: "Tinejdžeri", v: "--cT" },
 };
 const TOWNS = ["Makarska", "Baška Voda", "Omiš", "Podstrana", "Split", "Solin", "Kaštela", "Trogir", "Šibenik", "Vodice"];
-const INLAND = ["Klis", "Dugopolje", "Koprivno", "Sinj", "Trilj", "Zmijavci", "Imotski", "Vrgorac"];
+// zaleđe istim smjerom kao obala: jugoistok → sjeverozapad (Martina 23.11., prijedlog C)
+const INLAND = ["Vrgorac", "Imotski", "Zmijavci", "Trilj", "Sinj", "Koprivno", "Dugopolje", "Klis"];
 const ST = {
   "potvrđeno 2026": ["st-ok", "Potvrđeno"],
   "najavljeno – bez satnice": ["st-naj", "Bez satnice"],
@@ -262,17 +280,18 @@ const single = e => e.od && (!e.do || e.do === e.od);
 const range = e => e.od && e.do && e.do !== e.od;
 const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
 
-function pass(e) {
+// anyTown = true: svi ostali filteri vrijede, grad se zanemaruje (za brojeve na karticama gradova)
+function pass(e, anyTown = false) {
   if (!e.cats.some(c => state.cats.has(c))) return false;
   if (state.hideCancel && e.status === "OTKAZANO") return false;
-  if (state.town && !(e.grad.includes(state.town) || e.grad === "regija")) return false;
+  if (!anyTown && state.town && !(e.grad.includes(state.town) || e.grad === "regija")) return false;
   if (state.q) {
     const hay = norm([e.naziv, e.opis, e.grad, e.lok, e.dob].join(" "));
     if (!norm(state.q).split(/\s+/).every(w => hay.includes(w))) return false;
   }
   return true;
 }
-const visible = () => DATA.filter(pass);
+const visible = () => DATA.filter(e => pass(e));   // ne filter(pass): indeks bi postao anyTown
 
 function catTags(e) { return e.cats.map(c => `<span class="tag cat" style="--c: var(${CATS[c].v})">${CATS[c].name}</span>`).join(""); }
 function evHTML(e, opts = {}) {
@@ -298,24 +317,47 @@ function evHTML(e, opts = {}) {
 }
 
 function renderFilters() {
-  const coast = document.getElementById("coast");
-  const keepCoast = coast.scrollLeft, keepCats = document.getElementById("cats").scrollLeft;
-  requestAnimationFrame(() => { coast.scrollLeft = keepCoast; document.getElementById("cats").scrollLeft = keepCats; });
-  coast.querySelectorAll("button, .arrow, .inl").forEach(n => n.remove());
-  const mk = (label, val) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "town"; b.textContent = label;
+  const keepCats = document.getElementById("cats").scrollLeft;
+  requestAnimationFrame(() => { document.getElementById("cats").scrollLeft = keepCats; });
+
+  // gradovi: kartica = broj događanja uz trenutne filtere (kategorije, pretraga, otkazano) + traka po kategorijama
+  const towns = document.getElementById("towns");
+  towns.innerHTML = "";
+  const base = DATA.filter(e => pass(e, true));
+  const word = n => (n % 10 === 1 && n % 100 !== 11) ? "događanje" : "događanja";
+  const press = (b, val) => {
+    b.type = "button";
     b.setAttribute("aria-pressed", String(state.town === val));
     b.onclick = () => { state.town = state.town === val ? null : val; render(); };
     return b;
   };
-  coast.appendChild(mk("Svi gradovi", null));
-  TOWNS.forEach(t => coast.appendChild(mk(t, t)));
-  const lab = document.createElement("span");
-  lab.className = "coast-label inl"; lab.textContent = "Zaleđe";
-  lab.style.marginLeft = "10px";
-  coast.appendChild(lab);
-  INLAND.forEach(t => coast.appendChild(mk(t, t)));
+  const allBtn = document.createElement("button");
+  allBtn.className = "town-all";
+  allBtn.innerHTML = `Svi gradovi <span>${base.length} ${word(base.length)}</span>`;
+  towns.appendChild(press(allBtn, null));
+  [["Obala · jug → sjever", TOWNS, ""], ["Zaleđe", INLAND, " in"]].forEach(([label, list, cls]) => {
+    const group = document.createElement("div");
+    group.className = "town-group";
+    group.innerHTML = `<span class="town-label">${label}</span>`;
+    const grid = document.createElement("div");
+    grid.className = "tgrid";
+    list.forEach(t => {
+      const ev = base.filter(e => e.grad.includes(t));
+      const cnt = {};
+      ev.forEach(e => e.cats.forEach(c => { if (state.cats.has(c)) cnt[c] = (cnt[c] || 0) + 1; }));
+      const sum = Object.values(cnt).reduce((a, x) => a + x, 0);
+      const bar = Object.keys(CATS).filter(c => cnt[c])
+        .map(c => `<i style="--c: var(${CATS[c].v}); width: ${(cnt[c] / sum * 100).toFixed(1)}%"></i>`).join("");
+      const b = document.createElement("button");
+      b.className = "tile" + cls + (ev.length ? "" : " zero");
+      b.title = t;
+      b.setAttribute("aria-label", `${t}, ${ev.length} ${word(ev.length)}`);
+      b.innerHTML = `<span class="nm">${esc(t)}</span><span class="n">${ev.length}</span><span class="bar" aria-hidden="true">${bar}</span>`;
+      grid.appendChild(press(b, t));
+    });
+    group.appendChild(grid);
+    towns.appendChild(group);
+  });
 
   const cats = document.getElementById("cats");
   cats.innerHTML = "";
