@@ -13,7 +13,7 @@
 /* Layout: obalni filter (jug→sjever) iznad, mjesečna mreža lijevo + dnevni program desno; na mobitelu jedno ispod drugog */
 :root {
   --bg: #F2F5F6; --surface: #FFFFFF; --sunk: #E8EEF1; --ink: #13212B; --muted: #5A6A75; --line: #D6DEE3;
-  --accent: #0F5C78; --accent-ink: #FFFFFF; --today: #0F5C78; --hill-soft: #EFE6D6;
+  --accent: #0F5C78; --accent-ink: #FFFFFF; --today: #0F5C78; --hill-soft: #EFE6D6; --fav: #D1335B;
   --cA: #B3323A; --cD: #B57A0C; --cR: #C85E1A; --cO: #6A48B0; --cI: #1F6AAE; --cT: #2D8454;
   --ok: #2D7A4B; --okbg: #E1F1E6; --naj: #8A6410; --najbg: #FBF0D2; --sta: #24609A; --stabg: #DDEAF7;
   --pro: #A5481C; --probg: #FBE6DA; --otk: #FFFFFF; --otkbg: #A3313A;
@@ -23,7 +23,7 @@
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0C151B; --surface: #14212A; --sunk: #1A2a34; --ink: #E5ECF0; --muted: #93A3AE; --line: #263842;
-  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B;
+  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B; --fav: #FF7A99;
   --cA: #F07A82; --cD: #EDC05A; --cR: #F39A60; --cO: #B49CF0; --cI: #7BB7EC; --cT: #6ACF97;
   --ok: #7FD3A0; --okbg: #183A28; --naj: #EBC768; --najbg: #3A3016; --sta: #8DBDEB; --stabg: #1A3148;
   --pro: #F2A57E; --probg: #3E2418; --otk: #FFFFFF; --otkbg: #9A2F37;
@@ -31,7 +31,7 @@
 } }
 :root[data-theme="dark"] {
   --bg: #0C151B; --surface: #14212A; --sunk: #1A2a34; --ink: #E5ECF0; --muted: #93A3AE; --line: #263842;
-  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B;
+  --accent: #5DB3D3; --accent-ink: #08141A; --today: #5DB3D3; --hill-soft: #33291B; --fav: #FF7A99;
   --cA: #F07A82; --cD: #EDC05A; --cR: #F39A60; --cO: #B49CF0; --cI: #7BB7EC; --cT: #6ACF97;
   --ok: #7FD3A0; --okbg: #183A28; --naj: #EBC768; --najbg: #3A3016; --sta: #8DBDEB; --stabg: #1A3148;
   --pro: #F2A57E; --probg: #3E2418; --otk: #FFFFFF; --otkbg: #9A2F37;
@@ -131,7 +131,19 @@ a { color: var(--accent); }
 .day-title { font-size: 1.25rem; font-weight: 700; }
 .day-sub { color: var(--muted); font-size: 13px; margin: 2px 0 12px; }
 .evs { display: grid; gap: 10px; }
-.ev { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.ev { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+/* favoriti (Martina 23.11.): srce po događaju, pamti se u pregledniku (localStorage) */
+.fav-btn { width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer;
+  display: inline-grid; place-items: center; padding: 0; flex: 0 0 auto; }
+.fav-btn svg { width: 20px; height: 20px; }
+.fav-btn:hover { background: var(--sunk); color: var(--fav); }
+.fav-btn[aria-pressed="true"] { color: var(--fav); }
+.fav-btn[aria-pressed="true"] svg { fill: currentColor; }
+.ev .fav-btn { margin-top: -6px; }
+.hit-what .fav-btn { width: 32px; height: 32px; vertical-align: middle; margin: -6px 0 -6px 2px; }
+.day .fh { position: absolute; top: 5px; right: 6px; color: var(--fav); font-size: 12px; line-height: 1; }
+.quick.fav[aria-pressed="true"] { background: var(--fav); border-color: var(--fav); color: #FFFFFF; }
+.fav-note { color: var(--muted); font-size: 12px; margin: -4px 0 0; }
 .ev:first-child { border-top: 0; padding-top: 4px; }
 .ev-time { font: 600 14px var(--body); font-variant-numeric: tabular-nums; color: var(--ink); }
 .ev-time small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
@@ -232,7 +244,7 @@ details.fold[open] > summary::before { content: "▾"; }
   .cat-btn { flex: 0 0 auto; white-space: nowrap; }
   .cat-btn, .seg button { min-height: 40px; }
   .panel { padding: 12px; }
-  .ev { grid-template-columns: 52px minmax(0, 1fr); gap: 10px; }
+  .ev { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; }
   .cal-head h2 { font-size: 1.15rem; }
 }
 </style>
@@ -250,6 +262,7 @@ details.fold[open] > summary::before { content: "▾"; }
       <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu… (npr. Cetinski)" aria-label="Pretraga">
       <button type="button" class="quick" id="fWeekend" aria-pressed="false"></button>
       <button type="button" class="quick" id="fFree" aria-pressed="false"></button>
+      <button type="button" class="quick fav" id="fFav" aria-pressed="false" title="Srcem označi događanja koja te zanimaju"></button>
       <label class="chk"><input type="checkbox" id="hideCancel" checked> Sakrij otkazano</label>
       <div class="seg" role="group" aria-label="Prikaz">
         <button type="button" id="vCal" aria-pressed="true">Kalendar</button>
@@ -280,6 +293,7 @@ details.fold[open] > summary::before { content: "▾"; }
 
   <section class="panel section" id="undated"></section>
 
+  <p class="foot">Favoriti (♥) se pamte samo u ovom pregledniku na ovom uređaju. Svatko tko otvori stranicu ima svoje.</p>
   <p class="foot">Izvor podataka: ADVENT 2026 - Makarska-Sibenik.xlsx. Statusi: <b>Potvrđeno</b> znači da su datum i (uglavnom) sat objavljeni za 2026. <b>Bez satnice</b> znači najavljeno, ali bez sata. <b>Provjeriti</b> znači podatak iz prošle godine ili proturječne izvore.</p>
 </div>
 
@@ -318,7 +332,21 @@ const YEAR_END = (() => { const e = `${TODAY.slice(0, 4)}-12-31`; return e > LAS
 const monthIdx = k => Math.max(0, SPAN.findIndex(([y, m]) => k.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)));
 
 const state = { cats: new Set(Object.keys(CATS)), town: null, q: "", hideCancel: true, view: "cal",
-  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false, hitsAll: false, weekend: false, free: false };
+  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false, hitsAll: false, weekend: false, free: false, favOnly: false };
+
+// Favoriti: ključ = datum|grad|naziv (ID-jevi A12/T3 mijenjaju se kod svakog osvježavanja podataka).
+// localStorage, ključ s prefiksom jer je isti origin kao druge stranice na martina130288.github.io.
+const FAV_STORE = "advent2026-favoriti";
+const favKey = e => `${e.od || ""}|${e.grad}|${e.naziv}`;
+const FAV = new Set((() => { try { return JSON.parse(localStorage.getItem(FAV_STORE) || "[]"); } catch { return []; } })());
+const isFav = e => FAV.has(favKey(e));
+function toggleFav(k) {
+  FAV.has(k) ? FAV.delete(k) : FAV.add(k);
+  try { localStorage.setItem(FAV_STORE, JSON.stringify([...FAV])); } catch { /* privatni prozor: vrijedi do zatvaranja */ }
+  render();
+}
+const HEART = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 7.9 3.6 4.5 7 4.5c2 0 3.3 1.1 5 3 1.7-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>`;
+const favBtn = e => `<button type="button" class="fav-btn" data-f="${esc(favKey(e))}" aria-pressed="${isFav(e)}" aria-label="${isFav(e) ? "Makni iz favorita" : "Dodaj u favorite"}: ${esc(e.naziv)}">${HEART}</button>`;
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const key = (y, m, d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
@@ -354,6 +382,7 @@ function pass(e, anyTown = false) {
   if (state.hideCancel && e.status === "OTKAZANO") return false;
   if (state.free && !isFree(e)) return false;
   if (state.weekend && !inWeekend(e)) return false;
+  if (state.favOnly && !isFav(e)) return false;
   if (!anyTown && state.town && !(e.grad.includes(state.town) || e.grad === "regija")) return false;
   return matchQ(e);
 }
@@ -379,7 +408,7 @@ function evHTML(e, opts = {}) {
       <p class="where">${esc(e.grad)}${e.lok ? " · " + esc(e.lok) : ""}${span}</p>
       ${e.opis ? `<p class="desc">${esc(e.opis)}</p>` : ""}
       ${meta ? `<p class="meta">${meta}</p>` : ""}
-    </div></article>`;
+    </div>${favBtn(e)}</article>`;
 }
 
 function renderFilters() {
@@ -395,6 +424,7 @@ function renderFilters() {
   quick("fWeekend", "weekend", `Ovaj vikend · ${short(WEEKEND[0])}–${short(WEEKEND[1])}`,
     svg(`<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`));
   quick("fFree", "free", "Besplatno", svg(`<path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7c-2-4-6-4-6-1.5S10 7 12 7zm0 0c2-4 6-4 6-1.5S14 7 12 7z"/>`));
+  quick("fFav", "favOnly", "Favoriti", HEART.replace("<svg ", `<svg style="fill:${state.favOnly ? "currentColor" : "none"}" `));
 
   const keepCats = document.getElementById("cats").scrollLeft;
   requestAnimationFrame(() => { document.getElementById("cats").scrollLeft = keepCats; });
@@ -471,9 +501,10 @@ function renderGrid(ev) {
   for (let d = 1; d <= days; d++) {
     const k = key(y, m, d), list = byDay[k] || [];
     const cats = [...new Set(list.flatMap(e => e.cats))].filter(c => state.cats.has(c));
+    const fav = list.some(isFav);
     const cls = ["day", dowIdx(k) >= 5 ? "we" : "", k === TODAY ? "today" : "", k === state.sel ? "sel" : "", k < TODAY ? "past" : ""].join(" ");
-    html += `<button type="button" class="${cls}" data-k="${k}" aria-label="${longDate(k)}, ${list.length} događaja">
-      <span class="num">${d}</span>
+    html += `<button type="button" class="${cls}" data-k="${k}" aria-label="${longDate(k)}, ${list.length} događaja${fav ? ", ima favorit" : ""}">
+      <span class="num">${d}</span>${fav ? `<span class="fh" aria-hidden="true">♥</span>` : ""}
       <span class="dots">${cats.map(c => `<span class="dot" style="--c: var(${CATS[c].v})"></span>`).join("")}</span>
       ${list.length ? `<span class="cnt">${list.length}<span class="w"> ${list.length === 1 ? "događaj" : "događaja"}</span></span>` : ""}
     </button>`;
@@ -528,7 +559,9 @@ function renderList(ev) {
     const d = parse(k);
     const items = byDay[k].sort((a, b) => mins(a) - mins(b)).map(e => evHTML(e, { showRange: true })).join("");
     return `<div class="list-day"><div class="list-date">${d.getDate()}. ${d.getMonth()+1}.<small>${DOW_FULL[dowIdx(k)]}</small></div><div>${items}</div></div>`;
-  }).join("") : `<p class="empty-msg">Nijedan događaj ne odgovara filterima.</p>`;
+  }).join("") : `<p class="empty-msg">${state.favOnly && !FAV.size
+    ? "Još nemaš favorita. Klikni ♥ uz događanje u kalendaru i ono će se pojaviti ovdje."
+    : "Nijedan događaj ne odgovara filterima."}</p>`;
 }
 
 // Pregled termina: sve što odgovara pretrazi od danas do 31. 12., u svim gradovima (filter grada se ne primjenjuje),
@@ -539,7 +572,7 @@ function renderHits() {
   const box = document.getElementById("hits");
   if (norm(state.q).replace(/\s/g, "").length < 2) { box.hidden = true; box.innerHTML = ""; return; }
   const all = DATA.filter(e => e.cats.some(c => state.cats.has(c)) && matchQ(e)
-    && (!state.free || isFree(e)) && (!state.weekend || inWeekend(e)));
+    && (!state.free || isFree(e)) && (!state.weekend || inWeekend(e)) && (!state.favOnly || isFav(e)));
   const endOf = e => e.do || e.od;
   const rows = all.filter(e => e.od && endOf(e) >= TODAY && e.od <= YEAR_END)
     .sort((a, b) => a.od < b.od ? -1 : a.od > b.od ? 1 : mins(a) - mins(b));
@@ -572,7 +605,7 @@ function renderHits() {
       <button type="button" class="hit-when" data-k="${jump}" title="Pokaži u kalendaru">${when}</button>
       <div class="hit-time"><span class="ml">Sat: </span>${time}</div>
       <div class="hit-where"><b>${esc(e.grad)}</b>${e.lok ? `<span>${esc(e.lok)}</span>` : ""}</div>
-      <div class="hit-what"><span class="nm">${esc(e.naziv)}</span><div class="tags"><span class="tag ${cls}">${lab}</span></div></div>
+      <div class="hit-what"><span class="nm">${esc(e.naziv)}</span>${favBtn(e)}<div class="tags"><span class="tag ${cls}">${lab}</span></div></div>
       <div class="hit-price"><span class="ml">Cijena: </span>${price}${e.izvor ? `<a href="${esc(e.izvor)}" target="_blank" rel="noopener">Izvor ↗</a>` : ""}</div>
     </div>`;
   };
@@ -634,6 +667,18 @@ document.getElementById("fWeekend").onclick = () => {
   if (state.weekend) goDay(WEEKEND[0] < FIRST ? FIRST : WEEKEND[0] > LAST ? LAST : WEEKEND[0]); else render();
 };
 document.getElementById("fFree").onclick = () => { state.free = !state.free; render(); };
+// Favoriti: uključeno → Popis (moj plan po danima); isključeno → natrag na prikaz od prije
+document.getElementById("fFav").onclick = () => {
+  state.favOnly = !state.favOnly;
+  if (state.favOnly) { state.viewBeforeFav = state.view; state.view = "list"; }
+  else if (state.viewBeforeFav) state.view = state.viewBeforeFav;
+  render();
+};
+// jedno slušanje za sva srca (dnevni program, popis, pregled termina, bez datuma)
+document.addEventListener("click", ev => {
+  const b = ev.target.closest(".fav-btn");
+  if (b) { ev.stopPropagation(); toggleFav(b.dataset.f); }
+});
 document.getElementById("hideCancel").addEventListener("change", e => { state.hideCancel = e.target.checked; render(); });
 document.getElementById("vCal").onclick = () => { state.view = "cal"; render(); };
 document.getElementById("vList").onclick = () => { state.view = "list"; render(); };
