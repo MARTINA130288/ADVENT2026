@@ -38,6 +38,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* GitHub verzija nema Claudeov reset; inače .hits {display:grid} prikaže prazan okvir */
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -87,6 +88,13 @@ a { color: var(--accent); }
 .search { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font: 14px var(--body); }
 .chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+/* brzi filteri: ovaj vikend, besplatno (Martina 23.11.) */
+.quick { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 0 14px; min-height: 38px; font: 500 13px var(--body); cursor: pointer; white-space: nowrap; }
+.quick small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.quick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.quick[aria-pressed="true"] small { color: inherit; opacity: .8; }
+.quick svg { width: 15px; height: 15px; flex: 0 0 auto; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: var(--surface); color: var(--ink); padding: 8px 14px; font: 500 13px var(--body); cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
@@ -240,6 +248,8 @@ details.fold[open] > summary::before { content: "▾"; }
     <div class="cats" id="cats" aria-label="Kategorije"></div>
     <div class="row">
       <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu… (npr. Cetinski)" aria-label="Pretraga">
+      <button type="button" class="quick" id="fWeekend" aria-pressed="false"></button>
+      <button type="button" class="quick" id="fFree" aria-pressed="false"></button>
       <label class="chk"><input type="checkbox" id="hideCancel" checked> Sakrij otkazano</label>
       <div class="seg" role="group" aria-label="Prikaz">
         <button type="button" id="vCal" aria-pressed="true">Kalendar</button>
@@ -308,7 +318,7 @@ const YEAR_END = (() => { const e = `${TODAY.slice(0, 4)}-12-31`; return e > LAS
 const monthIdx = k => Math.max(0, SPAN.findIndex(([y, m]) => k.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)));
 
 const state = { cats: new Set(Object.keys(CATS)), town: null, q: "", hideCancel: true, view: "cal",
-  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false, hitsAll: false };
+  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false, hitsAll: false, weekend: false, free: false };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const key = (y, m, d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
@@ -319,6 +329,17 @@ const longDate = k => { const d = parse(k); return `${DOW_FULL[dowIdx(k)]}, ${d.
 const mins = e => { const m = /(\d{1,2}):(\d{2})/.exec(e.vr || ""); if (m) return +m[1]*60 + +m[2]; if (/noć/.test(e.vr||"")) return 1439; return 1500; };
 const single = e => e.od && (!e.do || e.do === e.od);
 const range = e => e.od && e.do && e.do !== e.od;
+// "Ovaj vikend" = petak–nedjelja: od pon do čet idući vikend, od pet do ned tekući (od danas)
+const WEEKEND = (() => {
+  const t = parse(TODAY), dw = (t.getDay() + 6) % 7;           // 0 = ponedjeljak … 4 = petak
+  const s = new Date(t); s.setDate(t.getDate() + (dw >= 4 ? 0 : 4 - dw));
+  const e = new Date(t); e.setDate(t.getDate() + (6 - dw));
+  return [key(s.getFullYear(), s.getMonth(), s.getDate()), key(e.getFullYear(), e.getMonth(), e.getDate())];
+})();
+const inWeekend = e => !e.od || (e.od <= WEEKEND[1] && (e.do || e.od) >= WEEKEND[0]);   // bez datuma = uvijek dostupno
+// "Besplatno" samo iz stupca Cijena; ne: iznos u € ("7 €; djeca … besplatno"), "ranije besplatno", "2025: besplatno"
+const isFree = e => { const c = e.cijena || "";
+  return /besplatn|slobodan ulaz|ulaz slobodan/i.test(c) && !/\d\s*€|€\s*\d/.test(c) && !/ranije|20\d\d\s*:/i.test(c); };
 // y → i: isti izvođač zna biti zapisan "Tony" i "Toni" (Cetinski)
 const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/y/g, "i");
 function matchQ(e) {
@@ -331,6 +352,8 @@ function matchQ(e) {
 function pass(e, anyTown = false) {
   if (!e.cats.some(c => state.cats.has(c))) return false;
   if (state.hideCancel && e.status === "OTKAZANO") return false;
+  if (state.free && !isFree(e)) return false;
+  if (state.weekend && !inWeekend(e)) return false;
   if (!anyTown && state.town && !(e.grad.includes(state.town) || e.grad === "regija")) return false;
   return matchQ(e);
 }
@@ -360,6 +383,19 @@ function evHTML(e, opts = {}) {
 }
 
 function renderFilters() {
+  // brzi filteri: broj = koliko bi bilo s tim filterom uključenim (ostali filteri kako jesu)
+  const quick = (id, prop, label, icon) => {
+    const was = state[prop]; state[prop] = true;
+    const n = DATA.filter(e => pass(e) && (prop !== "weekend" || e.od)).length; state[prop] = was;   // vikend: samo s datumom
+    const b = document.getElementById(id);
+    b.setAttribute("aria-pressed", String(state[prop]));
+    b.innerHTML = `${icon}${label} <small>${n}</small>`;
+  };
+  const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+  quick("fWeekend", "weekend", `Ovaj vikend · ${short(WEEKEND[0])}–${short(WEEKEND[1])}`,
+    svg(`<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`));
+  quick("fFree", "free", "Besplatno", svg(`<path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7c-2-4-6-4-6-1.5S10 7 12 7zm0 0c2-4 6-4 6-1.5S14 7 12 7z"/>`));
+
   const keepCats = document.getElementById("cats").scrollLeft;
   requestAnimationFrame(() => { document.getElementById("cats").scrollLeft = keepCats; });
 
@@ -502,7 +538,8 @@ const terms = n => (n % 10 === 1 && n % 100 !== 11) ? "termin" : "termina";
 function renderHits() {
   const box = document.getElementById("hits");
   if (norm(state.q).replace(/\s/g, "").length < 2) { box.hidden = true; box.innerHTML = ""; return; }
-  const all = DATA.filter(e => e.cats.some(c => state.cats.has(c)) && matchQ(e));
+  const all = DATA.filter(e => e.cats.some(c => state.cats.has(c)) && matchQ(e)
+    && (!state.free || isFree(e)) && (!state.weekend || inWeekend(e)));
   const endOf = e => e.do || e.od;
   const rows = all.filter(e => e.od && endOf(e) >= TODAY && e.od <= YEAR_END)
     .sort((a, b) => a.od < b.od ? -1 : a.od > b.od ? 1 : mins(a) - mins(b));
@@ -516,7 +553,9 @@ function renderHits() {
     past && `${past} već prošlo`,
     undated && `${undated} bez datuma (dolje, „Bez datuma”)`,
     state.town && `pregled uključuje sve gradove, filter „${esc(state.town)}” vrijedi za kalendar ispod`,
+    state.free && "samo besplatno",
   ].filter(Boolean).join(" · ");
+  const period = state.weekend ? `ovaj vikend (${short(WEEKEND[0])}–${short(WEEKEND[1])})` : `od danas do ${short(YEAR_END)}`;
 
   const row = e => {
     const [cls, lab] = ST[e.status] || ["st-pro", e.status];
@@ -540,7 +579,7 @@ function renderHits() {
 
   box.hidden = false;
   box.innerHTML = `<div class="hits-head">
-      <h2>„${esc(state.q)}”: ${rows.length ? `${rows.length} ${terms(rows.length)}` : "nema termina"} od danas do ${short(YEAR_END)}</h2>
+      <h2>„${esc(state.q)}”: ${rows.length ? `${rows.length} ${terms(rows.length)}` : "nema termina"} ${period}</h2>
       <button type="button" class="hits-btn" id="hitsClear">Očisti</button>
     </div>
     <p class="hint">${rows.length ? "Klikni datum za taj dan u kalendaru." : "Probaj samo prezime ili dio naziva."}${extra ? " " + extra + "." : ""}</p>
@@ -589,6 +628,12 @@ document.getElementById("todayBtn").onclick = () => goDay(START);
 document.getElementById("prev").onclick =() => { if (state.m > 0) { state.m--; render(); } };
 document.getElementById("next").onclick = () => { if (state.m < SPAN.length - 1) { state.m++; render(); } };
 document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim(); state.hitsAll = false; render(); });
+// uključen vikend: kalendar skoči na prvi dan vikenda
+document.getElementById("fWeekend").onclick = () => {
+  state.weekend = !state.weekend;
+  if (state.weekend) goDay(WEEKEND[0] < FIRST ? FIRST : WEEKEND[0] > LAST ? LAST : WEEKEND[0]); else render();
+};
+document.getElementById("fFree").onclick = () => { state.free = !state.free; render(); };
 document.getElementById("hideCancel").addEventListener("change", e => { state.hideCancel = e.target.checked; render(); });
 document.getElementById("vCal").onclick = () => { state.view = "cal"; render(); };
 document.getElementById("vList").onclick = () => { state.view = "list"; render(); };
