@@ -158,6 +158,43 @@ a { color: var(--accent); }
 @media (max-width: 520px) { .list-day { grid-template-columns: minmax(0, 1fr); gap: 4px; } .list-date { font-size: 1.2rem; } .list-date small { display: inline; margin-left: 6px; } }
 .list-day .ev { border-top: 0; padding: 6px 0; }
 
+/* pregled termina za pretragu (npr. izvođač): od danas do 31. 12. (Martina 23.11.) */
+.hits { display: grid; gap: 2px; }
+.hits-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.hits h2 { font-size: 1.2rem; font-weight: 700; }
+.hits .hint { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
+.hit-cols, .hit { display: grid; grid-template-columns: 112px 96px minmax(0, 1fr) minmax(0, 1.3fr) 160px; gap: 14px; align-items: baseline; }
+.hit-cols { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 4px 0; }
+.hit { padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.hit-when { all: unset; cursor: pointer; display: grid; }
+.hit-when b { font: 700 1.05rem var(--display); font-variant-numeric: tabular-nums; }
+.hit-when small { color: var(--muted); font-size: 12px; }
+.hit-when:hover b { text-decoration: underline; }
+.hit-when:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.hit-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+.hit-where b { display: block; font-weight: 600; }
+.hit-where span { color: var(--muted); font-size: 13px; }
+.hit-what .nm { font-weight: 600; }
+.hit-what .tags { margin-top: 4px; }
+.hit-price { font-size: 13px; }
+.hit-price a { display: block; font-size: 12px; margin-top: 2px; }
+.hit.cancel .nm { text-decoration: line-through; }
+.na { color: var(--muted); font-style: italic; font-weight: 400; font-size: 12.5px; }
+.ml { display: none; color: var(--muted); font-weight: 400; }
+.hits-btn { height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font: 500 13px var(--body); cursor: pointer; flex: 0 0 auto; }
+.hits-more { justify-self: start; margin-top: 8px; }
+@media (max-width: 760px) {
+  .hit-cols { display: none; }
+  .hit { grid-template-columns: 70px minmax(0, 1fr); grid-template-areas: "when what" "when time" "when where" "when price"; gap: 3px 12px; }
+  .hit-when { grid-area: when; align-self: start; } .hit-what { grid-area: what; } .hit-time { grid-area: time; }
+  .hit-where { grid-area: where; } .hit-price { grid-area: price; }
+  .hit-where b { display: inline; } .hit-where span::before { content: " · "; }
+  .hit-time, .hit-where, .hit-price { font-size: 13px; }
+  .ml { display: inline; }
+  .hit-price a { display: inline; margin-left: 8px; }
+}
+
 .section { margin-top: 4px; }
 .foot { color: var(--muted); font-size: 12px; }
 @media (prefers-reduced-motion: no-preference) { .day, .tile, .town-all, .cat-btn { transition: background-color .15s, border-color .15s, opacity .15s; } }
@@ -202,7 +239,7 @@ details.fold[open] > summary::before { content: "▾"; }
     <div class="towns" id="towns" role="group" aria-label="Grad"></div>
     <div class="cats" id="cats" aria-label="Kategorije"></div>
     <div class="row">
-      <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu…" aria-label="Pretraga">
+      <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu… (npr. Cetinski)" aria-label="Pretraga">
       <label class="chk"><input type="checkbox" id="hideCancel" checked> Sakrij otkazano</label>
       <div class="seg" role="group" aria-label="Prikaz">
         <button type="button" id="vCal" aria-pressed="true">Kalendar</button>
@@ -210,6 +247,8 @@ details.fold[open] > summary::before { content: "▾"; }
       </div>
     </div>
   </div>
+
+  <section class="panel hits" id="hits" role="region" aria-label="Pregled termina za pretragu" hidden></section>
 
   <div class="main" id="calView">
     <section class="panel" aria-label="Mjesečni kalendar">
@@ -264,10 +303,12 @@ const FIRST = "2026-11-01", LAST = "2027-01-31";
 const _now = new Date();
 const TODAY = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,"0")}-${String(_now.getDate()).padStart(2,"0")}`;
 const START = TODAY < FIRST ? FIRST : TODAY > LAST ? LAST : TODAY;
+// pregled termina ide od danas do kraja godine (Martina: "od danas do kraja godine")
+const YEAR_END = (() => { const e = `${TODAY.slice(0, 4)}-12-31`; return e > LAST ? LAST : e; })();
 const monthIdx = k => Math.max(0, SPAN.findIndex(([y, m]) => k.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)));
 
 const state = { cats: new Set(Object.keys(CATS)), town: null, q: "", hideCancel: true, view: "cal",
-  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false };
+  m: monthIdx(START), sel: START, foldOngoing: false, foldUndated: false, hitsAll: false };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const key = (y, m, d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
@@ -278,18 +319,20 @@ const longDate = k => { const d = parse(k); return `${DOW_FULL[dowIdx(k)]}, ${d.
 const mins = e => { const m = /(\d{1,2}):(\d{2})/.exec(e.vr || ""); if (m) return +m[1]*60 + +m[2]; if (/noć/.test(e.vr||"")) return 1439; return 1500; };
 const single = e => e.od && (!e.do || e.do === e.od);
 const range = e => e.od && e.do && e.do !== e.od;
-const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
+// y → i: isti izvođač zna biti zapisan "Tony" i "Toni" (Cetinski)
+const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/y/g, "i");
+function matchQ(e) {
+  if (!state.q) return true;
+  const hay = norm([e.naziv, e.opis, e.grad, e.lok, e.dob].join(" "));
+  return norm(state.q).split(/\s+/).every(w => hay.includes(w));
+}
 
 // anyTown = true: svi ostali filteri vrijede, grad se zanemaruje (za brojeve na karticama gradova)
 function pass(e, anyTown = false) {
   if (!e.cats.some(c => state.cats.has(c))) return false;
   if (state.hideCancel && e.status === "OTKAZANO") return false;
   if (!anyTown && state.town && !(e.grad.includes(state.town) || e.grad === "regija")) return false;
-  if (state.q) {
-    const hay = norm([e.naziv, e.opis, e.grad, e.lok, e.dob].join(" "));
-    if (!norm(state.q).split(/\s+/).every(w => hay.includes(w))) return false;
-  }
-  return true;
+  return matchQ(e);
 }
 const visible = () => DATA.filter(e => pass(e));   // ne filter(pass): indeks bi postao anyTown
 
@@ -452,6 +495,72 @@ function renderList(ev) {
   }).join("") : `<p class="empty-msg">Nijedan događaj ne odgovara filterima.</p>`;
 }
 
+// Pregled termina: sve što odgovara pretrazi od danas do 31. 12., u svim gradovima (filter grada se ne primjenjuje),
+// otkazano se prikazuje precrtano. Klik na datum otvara taj dan u kalendaru.
+const NA_PRICE = new Set(["", "nije navedeno", "provjeriti"]);
+const terms = n => (n % 10 === 1 && n % 100 !== 11) ? "termin" : "termina";
+function renderHits() {
+  const box = document.getElementById("hits");
+  if (norm(state.q).replace(/\s/g, "").length < 2) { box.hidden = true; box.innerHTML = ""; return; }
+  const all = DATA.filter(e => e.cats.some(c => state.cats.has(c)) && matchQ(e));
+  const endOf = e => e.do || e.od;
+  const rows = all.filter(e => e.od && endOf(e) >= TODAY && e.od <= YEAR_END)
+    .sort((a, b) => a.od < b.od ? -1 : a.od > b.od ? 1 : mins(a) - mins(b));
+  const later = all.filter(e => e.od && e.od > YEAR_END).length;
+  const past = all.filter(e => e.od && endOf(e) < TODAY).length;
+  const undated = all.filter(e => !e.od).length;
+  const shown = state.hitsAll || rows.length <= 15 ? rows : rows.slice(0, 12);
+  const missing = rows.some(e => e.status !== "OTKAZANO" && (!/\d{1,2}:\d{2}/.test(e.vr || "") || NA_PRICE.has((e.cijena || "").trim())));
+  const extra = [
+    later && `još ${later} nakon ${short(YEAR_END)}`,
+    past && `${past} već prošlo`,
+    undated && `${undated} bez datuma (dolje, „Bez datuma”)`,
+    state.town && `pregled uključuje sve gradove, filter „${esc(state.town)}” vrijedi za kalendar ispod`,
+  ].filter(Boolean).join(" · ");
+
+  const row = e => {
+    const [cls, lab] = ST[e.status] || ["st-pro", e.status];
+    const multi = range(e);
+    const jump = multi ? (e.od < TODAY ? TODAY : e.od) : e.od;
+    const d = parse(e.od);
+    const when = multi
+      ? `<b>${short(e.od)}–${short(e.do)}</b><small>traje više dana</small>`
+      : `<b>${d.getDate()}. ${d.getMonth() + 1}.</b><small>${DOW_FULL[dowIdx(e.od)]}</small>`;
+    const t = /(\d{1,2}:\d{2})/.exec(e.vr || "");
+    const time = t ? esc(e.vr.trim() === t[1] ? t[1] : e.vr) : e.vr ? esc(e.vr) : `<span class="na">nije objavljeno</span>`;
+    const price = NA_PRICE.has((e.cijena || "").trim()) ? `<span class="na">nije objavljena</span>` : esc(e.cijena);
+    return `<div class="hit${e.status === "OTKAZANO" ? " cancel" : ""}">
+      <button type="button" class="hit-when" data-k="${jump}" title="Pokaži u kalendaru">${when}</button>
+      <div class="hit-time"><span class="ml">Sat: </span>${time}</div>
+      <div class="hit-where"><b>${esc(e.grad)}</b>${e.lok ? `<span>${esc(e.lok)}</span>` : ""}</div>
+      <div class="hit-what"><span class="nm">${esc(e.naziv)}</span><div class="tags"><span class="tag ${cls}">${lab}</span></div></div>
+      <div class="hit-price"><span class="ml">Cijena: </span>${price}${e.izvor ? `<a href="${esc(e.izvor)}" target="_blank" rel="noopener">Izvor ↗</a>` : ""}</div>
+    </div>`;
+  };
+
+  box.hidden = false;
+  box.innerHTML = `<div class="hits-head">
+      <h2>„${esc(state.q)}”: ${rows.length ? `${rows.length} ${terms(rows.length)}` : "nema termina"} od danas do ${short(YEAR_END)}</h2>
+      <button type="button" class="hits-btn" id="hitsClear">Očisti</button>
+    </div>
+    <p class="hint">${rows.length ? "Klikni datum za taj dan u kalendaru." : "Probaj samo prezime ili dio naziva."}${extra ? " " + extra + "." : ""}</p>
+    ${rows.length ? `<div class="hit-cols" aria-hidden="true"><span>Kada</span><span>Sat</span><span>Gdje</span><span>Što</span><span>Cijena</span></div>` : ""}
+    ${shown.map(row).join("")}
+    ${shown.length < rows.length ? `<button type="button" class="hits-btn hits-more" id="hitsMore">Pokaži sve (${rows.length})</button>` : ""}
+    ${missing ? `<p class="hint" style="margin-top:8px">„Nije objavljeno” znači da organizator još nije objavio sat ili cijenu. Provjeri izvor bliže datumu.</p>` : ""}`;
+  box.querySelectorAll(".hit-when").forEach(b => b.onclick = () => {
+    state.view = "cal"; goDay(b.dataset.k);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const target = matchMedia("(max-width: 860px)").matches ? "dayPanel" : "calView";
+    document.getElementById(target).scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  });
+  box.querySelector("#hitsClear").onclick = () => {
+    const q = document.getElementById("q"); q.value = ""; state.q = ""; state.hitsAll = false; render(); q.focus();
+  };
+  const more = box.querySelector("#hitsMore");
+  if (more) more.onclick = () => { state.hitsAll = true; render(); };
+}
+
 function renderUndated(ev) {
   const u = ev.filter(e => !e.od).sort((a, b) => a.grad.localeCompare(b.grad, "hr"));
   const el = document.getElementById("undated");
@@ -465,6 +574,7 @@ function renderUndated(ev) {
 
 function render() {
   renderFilters();
+  renderHits();
   const ev = visible();
   const cal = state.view === "cal";
   document.getElementById("calView").hidden = !cal;
@@ -478,7 +588,7 @@ function render() {
 document.getElementById("todayBtn").onclick = () => goDay(START);
 document.getElementById("prev").onclick =() => { if (state.m > 0) { state.m--; render(); } };
 document.getElementById("next").onclick = () => { if (state.m < SPAN.length - 1) { state.m++; render(); } };
-document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim(); render(); });
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim(); state.hitsAll = false; render(); });
 document.getElementById("hideCancel").addEventListener("change", e => { state.hideCancel = e.target.checked; render(); });
 document.getElementById("vCal").onclick = () => { state.view = "cal"; render(); };
 document.getElementById("vList").onclick = () => { state.view = "list"; render(); };
