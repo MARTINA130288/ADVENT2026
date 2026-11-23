@@ -5,6 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0B1626">
+<meta name="description" content="Koncerti, dječji advent, radionice i izlasci na obali i u zaleđu, studeni 2026. – siječanj 2027. Kalendar s filterima i favoritima.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="hr_HR">
+<meta property="og:title" content="Advent od Makarske do Šibenika">
+<meta property="og:description" content="Koncerti, dječji advent, radionice i izlasci na obali i u zaleđu, studeni 2026. – siječanj 2027. Kalendar s filterima i favoritima.">
+<meta property="og:url" content="https://martina130288.github.io/ADVENT2026/">
+<meta property="og:image" content="https://martina130288.github.io/ADVENT2026/og.jpg?v=fb0e4535">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Advent od Makarske do Šibenika – adventski kalendar">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Advent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Advent Makarska–Šibenik</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -107,6 +127,27 @@ a { color: var(--link); }
 .search { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
   border-radius: 8px; padding: 8px 12px; font: 14px var(--body); }
 .chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+/* sklopivi filteri na mobitelu (≤640 px); na većim ekranima .quickrow ne postoji kao kutija, a gumb je skriven */
+.quickrow { display: contents; }
+.ftoggle { display: none; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: 600 14px var(--body); cursor: pointer; min-width: 0; text-align: left; }
+.ftoggle .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ftoggle .t small { font-weight: 500; color: var(--accent); font-size: 13px; }
+.ftoggle .chev { color: var(--muted); flex: 0 0 auto; transition: transform .15s; }
+.ftoggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.ftoggle.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+@media (max-width: 640px) {
+  .filters > .row { order: -1; }
+  .row .search { flex: 1 1 100%; }
+  .filters, .filters > * { min-width: 0; }   /* inače red gumba (nowrap) raširi cijelu stranicu */
+  .quickrow { display: flex; flex-wrap: nowrap; gap: 8px; flex: 1 1 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+  .quickrow::-webkit-scrollbar { display: none; }
+  .quickrow .quick { flex: 0 0 auto; }
+  .ftoggle { display: inline-flex; flex: 1 1 0; }   /* dijeli red s Kalendar/Popis */
+  .filters:not(.open) > .towns, .filters:not(.open) > .cats, .filters:not(.open) .chk { display: none; }
+  .filters.open .chk { order: 5; width: 100%; }
+}
 /* brzi filteri: ovaj vikend, besplatno (Martina 23.11.) */
 .quick { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
   border-radius: 999px; padding: 0 14px; min-height: 38px; font: 500 13px var(--body); cursor: pointer; white-space: nowrap; }
@@ -308,14 +349,18 @@ details.fold[open] > summary::before { content: "▾"; }
 
 <div class="wrap">
 
-  <div class="filters">
+  <div class="filters" id="filters">
     <div class="towns" id="towns" role="group" aria-label="Grad"></div>
     <div class="cats" id="cats" aria-label="Kategorije"></div>
     <div class="row">
       <input class="search" id="q" type="search" placeholder="Traži izvođača, mjesto, predstavu… (npr. Cetinski)" aria-label="Pretraga">
-      <button type="button" class="quick" id="fWeekend" aria-pressed="false"></button>
-      <button type="button" class="quick" id="fFree" aria-pressed="false"></button>
-      <button type="button" class="quick fav" id="fFav" aria-pressed="false" title="Srcem označi događanja koja te zanimaju"></button>
+      <div class="quickrow">
+        <button type="button" class="quick" id="fWeekend" aria-pressed="false"></button>
+        <button type="button" class="quick" id="fFree" aria-pressed="false"></button>
+        <button type="button" class="quick fav" id="fFav" aria-pressed="false" title="Srcem označi događanja koja te zanimaju"></button>
+      </div>
+      <!-- samo na mobitelu: gradovi, kategorije i "Sakrij otkazano" su sklopljeni (Martina 23.11.) -->
+      <button type="button" class="ftoggle" id="fToggle" aria-expanded="false" aria-controls="towns cats"></button>
       <label class="chk"><input type="checkbox" id="hideCancel" checked> Sakrij otkazano</label>
       <div class="seg" role="group" aria-label="Prikaz">
         <button type="button" id="vCal" aria-pressed="true">Kalendar</button>
@@ -482,6 +527,19 @@ function renderFilters() {
     svg(`<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>`));
   quick("fFree", "free", "Besplatno", svg(`<path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7c-2-4-6-4-6-1.5S10 7 12 7zm0 0c2-4 6-4 6-1.5S14 7 12 7z"/>`));
   quick("fFav", "favOnly", "Favoriti", HEART.replace("<svg ", `<svg style="fill:${state.favOnly ? "currentColor" : "none"}" `));
+
+  // mobitel: gumb "Gradovi i kategorije" pokazuje što je od toga uključeno, i kad je sklopljeno
+  const nCats = state.cats.size, allCats = Object.keys(CATS).length;
+  const active = [
+    state.town,
+    nCats < allCats && (nCats === 1 ? CATS[[...state.cats][0]].name : `${nCats} ${nCats < 5 ? "kategorije" : "kategorija"}`),
+    !state.hideCancel && "s otkazanim",
+  ].filter(Boolean);
+  const ft = document.getElementById("fToggle");
+  ft.classList.toggle("active", active.length > 0);
+  // kad je nešto uključeno, piše samo to (na uskom ekranu inače ode u "…")
+  ft.innerHTML = `<span class="t">${active.length ? `Filter: <small>${esc(active.join(", "))}</small>` : "Gradovi i kategorije"}</span><span class="chev" aria-hidden="true">▾</span>`;
+  ft.setAttribute("aria-label", `Gradovi i kategorije${active.length ? ", uključeno: " + active.join(", ") : ""}`);
 
   const keepCats = document.getElementById("cats").scrollLeft;
   requestAnimationFrame(() => { document.getElementById("cats").scrollLeft = keepCats; });
@@ -875,6 +933,11 @@ document.getElementById("fWeekend").onclick = () => {
   if (state.weekend) goDay(WEEKEND[0] < FIRST ? FIRST : WEEKEND[0] > LAST ? LAST : WEEKEND[0]); else render();
 };
 document.getElementById("fFree").onclick = () => { state.free = !state.free; render(); };
+document.getElementById("fToggle").onclick = () => {
+  const f = document.getElementById("filters"), open = !f.classList.contains("open");
+  f.classList.toggle("open", open);
+  document.getElementById("fToggle").setAttribute("aria-expanded", String(open));
+};
 // Favoriti: uključeno → Popis (moj plan po danima); isključeno → natrag na prikaz od prije
 document.getElementById("fFav").onclick = () => {
   state.favOnly = !state.favOnly;
