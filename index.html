@@ -108,6 +108,11 @@ a { color: var(--link); }
 .town-all span { color: var(--muted); font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; }
 .town-all[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .town-all[aria-pressed="true"] span { color: inherit; opacity: .8; }
+/* Izvođači uz "Svi gradovi" (Martina 25.11.); na mobitelu su gradovi sklopljeni, pa tamo gumb ostaje u redu brzih gumba */
+.town-top { display: flex; flex-wrap: wrap; gap: 8px; }
+.town-all svg { width: 15px; height: 15px; align-self: center; flex: 0 0 auto; }
+@media (min-width: 641px) { #fArt { display: none; } }
+@media (max-width: 640px) { .art-top { display: none !important; } }
 .town-group { display: grid; gap: 6px; }
 .town-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .tgrid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
@@ -534,6 +539,7 @@ const upcoming = e => !e.od || (e.do || e.od) >= TODAY;
 const ART_N = new Map();   // broj nastupa (bez otkazanih, od danas) – za poveznicu "svi nastupi" uz događanje
 DATA.forEach(e => { if (e.status !== "OTKAZANO" && upcoming(e)) izv(e).forEach(a => ART_N.set(a, (ART_N.get(a) || 0) + 1)); });
 const nastupa = n => (n % 10 === 1 && n % 100 !== 11) ? "nastup" : "nastupa";
+const MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg>`;
 
 // anyTown = true: svi ostali filteri vrijede, grad se zanemaruje (za brojeve na karticama gradova); anyArtist isto za izvođače
 function pass(e, anyTown = false, anyArtist = false) {
@@ -593,7 +599,7 @@ function renderFilters() {
   // Izvođači je prikaz (kao Favoriti → Popis), ne filter; broj = izvođači uz trenutne filtere
   const fa = document.getElementById("fArt");
   fa.setAttribute("aria-pressed", String(state.view === "art"));
-  fa.innerHTML = `${svg(`<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>`)}Izvođači <small>${artistMap().size}</small>`;
+  fa.innerHTML = `${MIC}Izvođači <small>${artistMap().size}</small>`;
 
   // mobitel: gumb "Gradovi i kategorije" pokazuje što je od toga uključeno, i kad je sklopljeno
   const nCats = state.cats.size, allCats = Object.keys(CATS).length;
@@ -625,7 +631,18 @@ function renderFilters() {
   const allBtn = document.createElement("button");
   allBtn.className = "town-all";
   allBtn.innerHTML = `Svi gradovi <span>${base.length} ${word(base.length)}</span>`;
-  towns.appendChild(press(allBtn, null));
+  const top = document.createElement("div");
+  top.className = "town-top";
+  top.appendChild(press(allBtn, null));
+  // Izvođači uz "Svi gradovi" (laptop/tablet); isti klik kao gumb u redu brzih gumba (mobitel)
+  const artBtn = document.createElement("button");
+  artBtn.type = "button"; artBtn.className = "town-all art-top";
+  artBtn.setAttribute("aria-pressed", String(state.view === "art"));
+  const nArt = artistMap().size;
+  artBtn.innerHTML = `${MIC}Izvođači <span>${nArt} ${nArt % 10 === 1 && nArt % 100 !== 11 ? "izvođač" : "izvođača"}</span>`;
+  artBtn.onclick = toggleArtView;
+  top.appendChild(artBtn);
+  towns.appendChild(top);
   [["Obala · jug → sjever", TOWNS, ""], ["Zaleđe", INLAND, " in"]].forEach(([label, list, cls]) => {
     const group = document.createElement("div");
     group.className = "town-group";
@@ -1083,11 +1100,12 @@ document.getElementById("fFav").onclick = () => {
   render();
 };
 // Izvođači: prikaz uključi/isključi; isključeno → natrag na prikaz od prije
-document.getElementById("fArt").onclick = () => {
+function toggleArtView() {
   if (state.view !== "art") { state.viewBeforeArt = state.view; state.view = "art"; }
   else state.view = state.viewBeforeArt || "cal";
   render();
-};
+}
+document.getElementById("fArt").onclick = toggleArtView;
 // jedno slušanje za sva srca (dnevni program, popis, pregled termina, bez datuma) i poveznice "svi nastupi"
 document.addEventListener("click", ev => {
   const b = ev.target.closest(".fav-btn");
